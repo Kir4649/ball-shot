@@ -1,4 +1,3 @@
-using UnityEditor.Rendering;
 using UnityEngine;
 
 public class Player : MonoBehaviour
@@ -6,7 +5,9 @@ public class Player : MonoBehaviour
     private Rigidbody rb;
     private LineRenderer lr;
 
-    private float power = 2.0f;//はじく力
+    [SerializeField]
+    private float power = 5.0f;//はじく力
+    [SerializeField]
     private float maxpower = 5.0f;//最大威力
 
     private Vector3 StartPos;
@@ -16,43 +17,58 @@ public class Player : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         lr = GetComponent<LineRenderer>();
-        lr.positionCount = 2;
+        lr.positionCount = 3;
         lr.enabled = false;
+    }
+
+    private bool GetMoyseWorldPos(out Vector3 worldPos)
+    {
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        Plane plane = new Plane(Vector3.up, Vector3.zero);//y=0にする
+
+        if (plane.Raycast(ray, out float distance))
+        {
+            worldPos = ray.GetPoint(distance);
+            return true;
+        }
+        worldPos = Vector3.zero;
+        return false;
     }
 
     private void OnMouseDown()
     {
-        float z = Camera.main.ScreenToWorldPoint(transform.position).z;
+        GetMoyseWorldPos(out StartPos);
 
-        StartPos = Camera.main.ScreenToWorldPoint(new Vector3( Input.mousePosition.x , Input.mousePosition.y,z));
 
-        isDragging = true;
-        lr.enabled = true;
-        lr.SetPosition(0,transform.position);
     }
 
     private void OnMouseDrag()
     {
-        float z = Camera.main.WorldToScreenPoint(transform.position).z;
+        GetMoyseWorldPos(out Vector3 dragPos);
 
-        Vector3 dragPos = Camera.main.ScreenToWorldPoint(
-            new Vector3(Input.mousePosition.x, Input.mousePosition.y, z)
-        );
+        Vector3 direction = StartPos - dragPos;//飛ぶ方向
 
-        // LineRenderer に引っ張り線を描く（オブジェクトは動かさない）
-        lr.SetPosition(1, dragPos);
+        //矢印自体
+        Vector3 arrowStart = transform.position;
+        Vector3 arrowEmd = transform.position + direction.normalized * 2.0f;
+        lr.SetPosition(0, arrowStart);
+        lr.SetPosition(1, arrowEmd);
+
+        float headSize = 0.3f;
+        Vector3 right = Quaternion.Euler(0, 20, 0) * -direction.normalized;
+        Vector3 left  = Quaternion.Euler(0, -20,0) * -direction.normalized;
+
+        Vector3 arrowHead = arrowEmd + (right + left) * headSize;
+        lr.SetPosition(2, arrowHead);
+
     }
     private void OnMouseUp()
     {
-        isDragging = false;
         lr.enabled = false;
 
-        float z = Camera.main.WorldToScreenPoint(transform.position).z ;
+        GetMoyseWorldPos(out EndPos);
+        Vector3 force = Vector3.ClampMagnitude((StartPos - EndPos), maxpower);
+        rb.AddForce(force * power, ForceMode.Impulse);
 
-        Vector3 endPos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, z));
-
-
-        Vector3 force = Vector3.ClampMagnitude((StartPos - EndPos),maxpower);
-        rb.AddForce(force * power,ForceMode.Impulse);
     }
 }
