@@ -9,10 +9,12 @@ public class Player : MonoBehaviour
     private float power = 5.0f;//ÇÕÇ∂Ç≠óÕ
     [SerializeField]
     private float maxpower = 5.0f;//ç≈ëÂà–óÕ
+    
 
     private Vector3 StartPos;
     private Vector3 EndPos;
     private bool isDragging = false;
+   
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -38,8 +40,6 @@ public class Player : MonoBehaviour
     private void OnMouseDown()
     {
         GetMoyseWorldPos(out StartPos);
-
-
     }
 
     private void OnMouseDrag()
